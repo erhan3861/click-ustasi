@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Click Ustalığı</title>
+  <style>
+    /* ========================
+       Tema & Reset
+       ======================== */
+    :root{
+      --primary:#6c5dd3; /* Mor */
+      --accent:#ffde59;  /* Sarı */
+      --bg1:#0f1020;
+      --bg2:#1a1b34;
+      --text:#f5f7fb;
+      --muted:#b9bcd6;
+      --glass:rgba(255,255,255,0.06);
+      --shadow:0 10px 30px rgba(0,0,0,.35);
+      --radius:20px;
+      --radius-sm:12px;
+      --trans-fast:.15s ease;
+      --trans:.3s ease;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,'Noto Sans',sans-serif;
+      color:var(--text); background: radial-gradient(1200px 800px at 10% 10%, #251f5a 0%, #141433 35%, #0c0d1f 70%),
+                         radial-gradient(1200px 800px at 90% 90%, #2a225f 0%, #161738 40%, #0f1020 75%);
+      background-attachment: fixed;
+    }
+    @media (prefers-reduced-motion: no-preference){
+      body{animation:bgfloat 18s ease-in-out infinite alternate}
+      @keyframes bgfloat{from{background-position:0 0,0 0} to{background-position:30px 20px,-30px -20px}}
+    }
+
+    /* ========================
+       Layout
+       ======================== */
+    .container{
+      min-height:100%; display:grid; grid-template-rows:auto 1fr auto; gap:20px; padding:20px; max-width:1200px; margin:0 auto;
+    }
+    header, footer{
+      background:linear-gradient(135deg, rgba(108,93,211,.25), rgba(255,222,89,.12));
+      backdrop-filter: blur(8px);
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:var(--shadow);
+      border-radius:var(--radius);
+      padding:14px 18px;
+    }
+    header{display:flex; align-items:center; justify-content:space-between; gap:16px}
+    .brand{display:flex; align-items:center; gap:14px}
+    .logo{
+      width:42px; height:42px; border-radius:12px; background:linear-gradient(135deg,var(--primary),#8c82ff);
+      box-shadow:0 8px 24px rgba(108,93,211,.35);
+      display:grid; place-items:center; font-weight:700
+    }
+    .logo span{font-size:22px}
+    .titles h1{font-size:20px; margin:0}
+    .titles small{color:var(--muted)}
+
+    .hud{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+    .pill{background:var(--glass); border:1px solid rgba(255,255,255,.08); border-radius:999px; padding:8px 12px; display:flex; align-items:center; gap:8px}
+    .pill strong{font-weight:700}
+    .btn-icon{appearance:none; border:1px solid rgba(255,255,255,.12); background:var(--glass); color:var(--text); border-radius:12px; width:42px; height:42px; display:grid; place-items:center; cursor:pointer; transition:transform var(--trans-fast), background var(--trans-fast)}
+    .btn-icon:hover{transform:translateY(-1px)}
+    .btn-icon:active{transform:translateY(1px) scale(.98)}
+
+    main{display:grid; grid-template-columns: 1.2fr .8fr; gap:20px}
+    @media (max-width: 900px){
+      main{grid-template-columns:1fr}
+    }
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      backdrop-filter: blur(10px);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:18px;
+    }
+
+    /* ========================
+       Big Click Button & Center Stage
+       ======================== */
+    .stage{display:grid; place-items:center; gap:16px; text-align:center}
+    .score{
+      font-size:48px; font-weight:800; letter-spacing:.5px; margin:0 0 8px 0;
+      text-shadow:0 6px 18px rgba(0,0,0,.55);
+    }
+    .subtitle{color:var(--muted); margin:0 0 16px 0}
+
+    .click-btn{
+      appearance:none; border:none; cursor:pointer; color:#13132a; font-weight:800; letter-spacing:.3px;
+      background:linear-gradient(180deg,#ffde59,#ffd22a);
+      border-radius:30px; padding:26px 40px; font-size:30px;
+      box-shadow: 0 14px 36px rgba(255,222,89,.35), inset 0 -6px 0 rgba(0,0,0,.12);
+      transition: transform var(--trans-fast), filter var(--trans-fast);
+    }
+    .click-btn:hover{transform: translateY(-2px)}
+    .click-btn:active{transform: translateY(1px) scale(.98)}
+
+    .flying{position:fixed; pointer-events:none; font-weight:700; color:#9be7ff; text-shadow:0 4px 10px rgba(0,0,0,.5)}
+
+    /* ========================
+       Right / Bottom Panel
+       ======================== */
+    .panel{display:grid; gap:16px}
+
+    .progress{
+      display:grid; gap:8px
+    }
+    .progress .bar{
+      height:18px; background:rgba(255,255,255,.08); border-radius:999px; overflow:hidden; border:1px solid rgba(255,255,255,.08)
+    }
+    .progress .bar > span{
+      display:block; height:100%; width:0%;
+      background:linear-gradient(90deg, var(--primary), #8c82ff);
+      transition:width var(--trans);
+    }
+    .progress small{color:var(--muted)}
+
+    .ach-grid{
+      display:grid; grid-template-columns: repeat(4, minmax(60px,1fr)); gap:10px
+    }
+    @media (max-width:520px){.ach-grid{grid-template-columns: repeat(3, minmax(60px,1fr));}}
+    .ach{
+      background:var(--glass); border:1px solid rgba(255,255,255,.08); border-radius:var(--radius-sm); padding:10px; text-align:center; min-height:74px;
+    }
+    .ach.locked{opacity:.45; filter:grayscale(.6)}
+    .ach .big{font-size:22px}
+    .ach small{display:block; color:var(--muted); margin-top:4px}
+
+    /* ========================
+       Footer
+       ======================== */
+    footer{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
+    .microcopy{color:var(--muted)}
+
+    /* ========================
+       Modals
+       ======================== */
+    .modal-backdrop{position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; padding:20px; z-index:50}
+    .modal-backdrop.show{display:flex}
+    .modal{
+      width:min(560px, 100%); background:linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+      border:1px solid rgba(255,255,255,.14); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px;
+    }
+    .modal h3{margin:0 0 10px 0}
+    .modal p{margin:0 0 12px 0; color:#e9ecff}
+    .modal .actions{display:flex; gap:10px; justify-content:flex-end}
+    .btn{
+      appearance:none; border:1px solid rgba(255,255,255,.16); background:var(--glass); color:var(--text);
+      border-radius:12px; padding:10px 14px; cursor:pointer; font-weight:600; transition:transform var(--trans-fast), background var(--trans-fast)
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .btn:active{transform:translateY(1px) scale(.98)}
+    .btn.primary{background:linear-gradient(180deg,var(--primary),#5a4acc)}
+    .btn.warn{background:linear-gradient(180deg,#c94040,#a22d2d)}
+    .codebox{display:flex; align-items:center; justify-content:space-between; gap:8px; background:rgba(0,0,0,.25); border:1px dashed rgba(255,255,255,.25); border-radius:12px; padding:10px 12px; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+    .codebox code{font-weight:700; letter-spacing:.5px}
+
+    /* Accessibility helpers */
+    .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header aria-label="Üst çubuk">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"><span>⚡</span></div>
+        <div class="titles">
+          <h1>Click Ustalığı</h1>
+          <small>İlkokul & Ortaokul için eğlenceli tık oyunu</small>
+        </div>
+      </div>
+      <div class="hud" role="group" aria-label="Durum">
+        <div class="pill" aria-live="polite" aria-atomic="true"><span>🎯</span><span><strong>Puan:</strong> <span id="scoreTop">0</span></span></div>
+        <div class="pill" aria-live="polite" aria-atomic="true"><span id="rankBadge">🎓</span><span><strong>Unvan:</strong> <span id="rankName">Click Öğrencisi</span></span></div>
+        <button id="btnSettings" class="btn-icon" aria-label="Ayarlar" title="Ayarlar">⚙️</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="card stage" aria-labelledby="stageTitle">
+        <h2 id="stageTitle" class="sr-only">Oyun Sahnesi</h2>
+        <p class="score" id="score">0</p>
+        <p class="subtitle" id="subtitle">Tıkla ve yüksel!</p>
+        <button id="btnClick" class="click-btn" aria-label="Puan kazan">Tıkla!</button>
+        <canvas id="confetti" width="0" height="0" style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none;"></canvas>
+        <audio id="clickSound" preload="auto">
+          <source src="data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" type="audio/mpeg">
+        </audio>
+      </section>
+
+      <aside class="panel">
+        <section class="card" aria-labelledby="progressTitle">
+          <h3 id="progressTitle">Seviye & İlerleme</h3>
+          <div class="progress">
+            <div class="bar" aria-label="İlerleme çubuğu"><span id="barFill" style="width:0%"></span></div>
+            <small><span id="progressText">Sonraki Unvana Kalan: 50</span></small>
+          </div>
+        </section>
+        
+        <section class="card" aria-labelledby="achTitle">
+          <h3 id="achTitle">Başarı Rozetleri</h3>
+          <div class="ach-grid" id="achGrid">
+            <!-- JS ile doldurulacak -->
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <footer>
+      <div class="microcopy" id="tips">Ritmi yakala, tıklar seni yükseltsin!</div>
+      <small>© 2025 Click Ustalığı • <a href="#" style="color:var(--accent); text-decoration:none">Eğitici oyun</a></small>
+    </footer>
+  </div>
+
+  <!-- Sürpriz Kod Modal (10 puan) -->
+  <div class="modal-backdrop" id="modalCode" role="dialog" aria-modal="true" aria-labelledby="codeTitle" aria-hidden="true">
+    <div class="modal">
+      <h3 id="codeTitle">Sürpriz Kod</h3>
+      <p>Tebrikler! İlk eşiği geçtin.</p>
+      <div class="codebox">
+        <code id="secretCode">123</code>
+        <button class="btn" id="btnCopy">📋 Kopyala</button>
+      </div>
+      <div class="actions">
+        <button class="btn primary" data-close="modalCode">Kapat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Seviye Şifresi Modal (Efsane/Şampiyon) -->
+  <div class="modal-backdrop" id="modalRank" role="dialog" aria-modal="true" aria-labelledby="rankCodeTitle" aria-hidden="true">
+    <div class="modal">
+      <h3 id="rankCodeTitle">Seviye Şifresi</h3>
+      <p id="rankCodeDesc">Yeni unvanına ulaştın! Aşağıdaki şifreyi güvenle sakla.</p>
+      <div class="codebox">
+        <code id="rankSecretCode">—</code>
+        <button class="btn" id="btnCopyRank">📋 Kopyala</button>
+      </div>
+      <div style="margin-top:10px; color:#cdd3ff; font-size:.92rem">Bu şifre yalnızca bu unvana ilk ulaştığında gösterilir ve yerel cihazında saklanır.</div>
+      <div class="actions">
+        <button class="btn primary" data-close="modalRank">Kapat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ayarlar Modal -->
+  <div class="modal-backdrop" id="modalSettings" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" aria-hidden="true">
+    <div class="modal">
+      <h3 id="settingsTitle">Ayarlar</h3>
+      <p>Tercihlerini düzenle.</p>
+      <div style="display:grid; gap:10px; margin:12px 0">
+        <label class="pill" style="justify-content:space-between">
+          <span>🔊 Ses</span>
+          <input type="checkbox" id="optSound" />
+        </label>
+        <label class="pill" style="justify-content:space-between">
+          <span>🎉 Konfeti</span>
+          <input type="checkbox" id="optConfetti" checked />
+        </label>
+        <button class="btn warn" id="btnReset">Veriyi Sıfırla</button>
+      </div>
+      <div class="actions">
+        <button class="btn primary" data-close="modalSettings">Kapat</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sr-only" aria-live="polite" id="live"></div>
+
+  <script>
+    // ========================
+    // Veri Modeli & Durum
+    // ========================
+    const LS_KEYS = {
+      total:'click_total',
+      ach:'unlocked_achievements',
+      settings:'settings',
+      shown:'shown_codes'
+    };
+
+    const RANKS = [
+      { name:'Click Öğrencisi', min:0,   max:49,  badge:'🎓' },
+      { name:'Click Ustası',   min:50,  max:199, badge:'🛠️' },
+      { name:'Click Efsanesi', min:200, max:499, badge:'🏆' },
+      { name:'Click Şampiyonu',min:500, max:Infinity, badge:'👑' }
+    ];
+
+    const ACH_DEFS = [
+      { key:'a10',  at:10,  label:'Isınma Bitti',     emoji:'🔥' },
+      { key:'a50',  at:50,  label:'Ritmi Yakaladın',  emoji:'🎶' },
+      { key:'a100', at:100, label:'Yüzlük Oldu!',     emoji:'💯' },
+      { key:'a200', at:200, label:'Efsane Başlangıcı',emoji:'🌟' }
+    ];
+
+    // Rank bazlı sabit şifreler
+    const RANK_CODES = {
+      'Click Efsanesi': 'T14-CEFS-2025-TR-9X7A-2QPM-VALOR-7H',
+      'Click Şampiyonu': 'T14-CSMP-2025-TR-5L9R-8KQD-LEGEND-9Z'
+    };
+
+    const MICROCOPY = [
+      'Ritmi yakala, tıklar seni yükseltsin!',
+      'Kısa molalar ver, hızını koru.',
+      'Unvana az kaldı, devam!',
+      'Hedef belirle: 50 → Ustalık!',
+      'Küçük adımlar büyük sonuçlar getirir.'
+    ];
+
+    const state = {
+      total:0,
+      achievements:new Set(),
+      settings:{ sound:false, confetti:true },
+      shownCodes:new Set(),
+      motionOK: !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    };
+
+    function loadState(){
+      const t = Number(localStorage.getItem(LS_KEYS.total) || '0');
+      state.total = isNaN(t)?0:t;
+      try{ state.achievements = new Set(JSON.parse(localStorage.getItem(LS_KEYS.ach) || '[]')); }catch{ state.achievements = new Set(); }
+      try{
+        const s = JSON.parse(localStorage.getItem(LS_KEYS.settings) || '{}');
+        state.settings = { sound:!!s.sound, confetti: s.confetti !== undefined ? !!s.confetti : true };
+      }catch{}
+      try{ state.shownCodes = new Set(JSON.parse(localStorage.getItem(LS_KEYS.shown) || '[]')); }catch{ state.shownCodes = new Set(); }
+    }
+    function saveState(){
+      localStorage.setItem(LS_KEYS.total, String(state.total));
+      localStorage.setItem(LS_KEYS.ach, JSON.stringify([...state.achievements]));
+      localStorage.setItem(LS_KEYS.settings, JSON.stringify(state.settings));
+      localStorage.setItem(LS_KEYS.shown, JSON.stringify([...state.shownCodes]));
+    }
+
+    // ========================
+    // UI Referansları
+    // ========================
+    const els = {
+      scoreTop: document.getElementById('scoreTop'),
+      score: document.getElementById('score'),
+      subtitle: document.getElementById('subtitle'),
+      btnClick: document.getElementById('btnClick'),
+      btnSettings: document.getElementById('btnSettings'),
+      barFill: document.getElementById('barFill'),
+      progressText: document.getElementById('progressText'),
+      rankBadge: document.getElementById('rankBadge'),
+      rankName: document.getElementById('rankName'),
+      achGrid: document.getElementById('achGrid'),
+      tips: document.getElementById('tips'),
+      live: document.getElementById('live'),
+      modalCode: document.getElementById('modalCode'),
+      modalSettings: document.getElementById('modalSettings'),
+      btnCopy: document.getElementById('btnCopy'),
+      btnReset: document.getElementById('btnReset'),
+      optSound: document.getElementById('optSound'),
+      optConfetti: document.getElementById('optConfetti'),
+      clickSound: document.getElementById('clickSound'),
+      confetti: document.getElementById('confetti')
+    };
+
+    // ========================
+    // Yardımcılar
+    // ========================
+    function currentRank(total){
+      return RANKS.find(r => total >= r.min && total <= r.max);
+    }
+    function nextRankTarget(total){
+      const next = RANKS.find(r => total < r.min);
+      return next ? next.min : null; // Şampiyon sonrası yok
+    }
+    function setText(node, text){ node.textContent = String(text); }
+    function vibrate(ms=20){ if(navigator.vibrate) try{ navigator.vibrate(ms); }catch{} }
+    function live(msg){ setText(els.live, msg); }
+
+    // Uçan +1
+    function flyingText(x,y,text='+1'){
+      if(!state.motionOK) return;
+      const el = document.createElement('div');
+      el.className = 'flying';
+      el.textContent = text;
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      el.style.opacity = '1';
+      el.style.transition = 'transform .7s ease, opacity .7s ease';
+      document.body.appendChild(el);
+      requestAnimationFrame(()=>{
+        el.style.transform = 'translateY(-40px)';
+        el.style.opacity = '0';
+      });
+      setTimeout(()=> el.remove(), 800);
+    }
+
+    // Basit konfeti (canvas)
+    const confetti = {
+      ctx:null, parts:[],
+      spawn(n=120){
+        if(!state.settings.confetti || !state.motionOK) return;
+        const {width:w, height:h} = els.confetti.getBoundingClientRect();
+        this.parts.length = 0;
+        for(let i=0;i<n;i++){
+          this.parts.push({
+            x: Math.random()*w,
+            y: -10 - Math.random()*h*0.3,
+            s: 4+Math.random()*6,
+            vx: -1 + Math.random()*2,
+            vy: 1 + Math.random()*3,
+            rot: Math.random()*Math.PI,
+            vr: (-0.1+Math.random()*0.2)
+          });
+        }
+      },
+      loop(){
+        const c = els.confetti, ctx = this.ctx; if(!ctx) return;
+        const w = c.width = c.clientWidth, h = c.height = c.clientHeight;
+        ctx.clearRect(0,0,w,h);
+        ctx.save();
+        for(const p of this.parts){
+          p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+          if(p.y > h+20) { p.y = -10; p.x = Math.random()*w; }
+          ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+          ctx.fillStyle = Math.random()>.5? '#ffde59' : '#8c82ff';
+          ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s);
+          ctx.setTransform(1,0,0,1,0,0);
+        }
+        ctx.restore();
+        requestAnimationFrame(()=>this.loop());
+      }
+    };
+
+    // ========================
+    // Başarılar UI
+    // ========================
+    function renderAchievements(){
+      els.achGrid.innerHTML = '';
+      for(const a of ACH_DEFS){
+        const unlocked = state.achievements.has(a.key);
+        const div = document.createElement('div');
+        div.className = 'ach' + (unlocked? '' : ' locked');
+        div.innerHTML = `<div class="big">${a.emoji}</div><small>${a.label}</small>`;
+        els.achGrid.appendChild(div);
+      }
+    }
+
+    function unlockAchievement(key){
+      const def = ACH_DEFS.find(a=>a.key===key);
+      if(!def) return;
+      if(!state.achievements.has(key)){
+        state.achievements.add(key);
+        saveState();
+        renderAchievements();
+        // Küçük kutlama
+        if(state.settings.confetti) confetti.spawn(80);
+        vibrate(15);
+        live(`Başarı açıldı: ${def.label}`);
+      }
+    }
+
+    // ========================
+    // Unvan & İlerleme
+    // ========================
+    function updateRank(){
+      const r = currentRank(state.total);
+      setText(els.rankName, r.name);
+      setText(els.rankBadge, r.badge);
+      // İlerleme
+      const next = nextRankTarget(state.total);
+      if(next === null){
+        setText(els.progressText, 'En yüksek unvandasın!');
+        els.barFill.style.width = '100%';
+      } else {
+        const curMin = r.min;
+        const span = next - curMin;
+        const done = state.total - curMin;
+        const pct = Math.max(0, Math.min(100, Math.round(done/span*100)));
+        els.barFill.style.width = pct + '%';
+        setText(els.progressText, `Sonraki Unvana Kalan: ${Math.max(0, next - state.total)}`);
+      }
+    }
+
+    // ========================
+    // Puan & Click
+    // ========================
+    function updateScoreUI(){
+      setText(els.score, state.total);
+      setText(els.scoreTop, state.total);
+    }
+
+    function onClick(e){
+      state.total += 1;
+      // Ses
+      if(state.settings.sound){ try{ els.clickSound.currentTime = 0; els.clickSound.play(); }catch{} }
+      // Uçan +1
+      const x = (e.clientX || (innerWidth/2)), y = (e.clientY || (innerHeight/2));
+      flyingText(x,y,'+1');
+      // Vibration micro
+      vibrate(12);
+      // 10 puanda şifre modal
+      if(state.total === 10) showModal('modalCode');
+      // Başarılar
+      for(const a of ACH_DEFS){ if(state.total === a.at) unlockAchievement(a.key); }
+      // Unvan değişti mi? Basit kontrol
+      const prevRank = currentRank(state.total-1);
+      const newRank = currentRank(state.total);
+      if(prevRank.name !== newRank.name){
+        if(state.settings.confetti) confetti.spawn(150);
+        vibrate(25);
+        live(`Yeni Unvan: ${newRank.name}`);
+        // Efsane/Şampiyon şifre modalı
+        showRankModal(newRank.name);
+      }
+      updateScoreUI();
+      updateRank();
+      saveState();
+    }
+
+    // ========================
+    // Modals
+    // ========================
+    function showModal(id){
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.classList.add('show');
+      el.setAttribute('aria-hidden','false');
+    }
+    function closeModal(id){
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.classList.remove('show');
+      el.setAttribute('aria-hidden','true');
+    }
+    function showRankModal(rankName){
+      const code = RANK_CODES[rankName];
+      if(!code) return;
+      if(state.shownCodes.has(rankName)) return; // Sadece ilk kez
+      // Kod içeriğini yerleştir
+      document.getElementById('rankSecretCode').textContent = code;
+      const desc = document.getElementById('rankCodeDesc');
+      desc.textContent = `${rankName} oldun! Bu özel şifreyi sakla.`;
+      showModal('modalRank');
+      state.shownCodes.add(rankName);
+      saveState();
+      if(state.settings.confetti) confetti.spawn(180);
+      vibrate(30);
+      live(`Seviye şifresi gösterildi: ${rankName}`);
+    }
+
+    // ========================
+    // Ayarlar
+    // ========================
+    function applySettingsToUI(){
+      els.optSound.checked = !!state.settings.sound;
+      els.optConfetti.checked = !!state.settings.confetti;
+    }
+
+    // ========================
+    // İpuçları
+    // ========================
+    function rotateTip(){
+      const tip = MICROCOPY[Math.floor(Math.random()*MICROCOPY.length)];
+      els.tips.textContent = tip;
+    }
+
+    // ========================
+    // Basit Testler (console)
+    // ========================
+    function assert(cond, msg){ if(!cond) throw new Error('Test failed: '+msg); }
+    function runTests(){
+      console.group('%cClick Ustalığı — Testler','color:#ffde59');
+      // Rank sınır testleri
+      assert(currentRank(0).name==='Click Öğrencisi','rank 0');
+      assert(currentRank(49).name==='Click Öğrencisi','rank 49');
+      assert(currentRank(50).name==='Click Ustası','rank 50');
+      assert(currentRank(199).name==='Click Ustası','rank 199');
+      assert(currentRank(200).name==='Click Efsanesi','rank 200');
+      assert(currentRank(499).name==='Click Efsanesi','rank 499');
+      assert(currentRank(500).name==='Click Şampiyonu','rank 500');
+      // nextRankTarget
+      assert(nextRankTarget(0)===50,'next from 0');
+      assert(nextRankTarget(55)===200,'next from 55');
+      assert(nextRankTarget(201)===500,'next from 201');
+      assert(nextRankTarget(800)===null,'next from champion');
+      // Kodlar
+      assert(!!RANK_CODES['Click Efsanesi'],'code exists efsane');
+      assert(!!RANK_CODES['Click Şampiyonu'],'code exists şampiyon');
+      console.log('%c✔ Tüm testler geçti','color:#8c82ff');
+      console.groupEnd();
+    }
+
+    // ========================
+    // Init
+    // ========================
+    function init(){
+      loadState();
+      updateScoreUI();
+      updateRank();
+      renderAchievements();
+      applySettingsToUI();
+      rotateTip();
+      setInterval(rotateTip, 6000);
+
+      // Konfeti döngüsü
+      confetti.ctx = els.confetti.getContext('2d');
+      confetti.loop();
+
+      // Events
+      els.btnClick.addEventListener('click', onClick);
+      // Klavye erişimi (Space/Enter)
+      els.btnClick.addEventListener('keydown', (ev)=>{
+        if(ev.key===' '|| ev.key==='Enter'){ ev.preventDefault(); onClick(ev); }
+      });
+
+      els.btnSettings.addEventListener('click', ()=> showModal('modalSettings'));
+      document.querySelectorAll('[data-close]').forEach(btn=>{
+        btn.addEventListener('click', ()=> closeModal(btn.getAttribute('data-close')));
+      });
+
+      if(els.btnCopy){
+        els.btnCopy.addEventListener('click', async()=>{
+          try{ await navigator.clipboard.writeText(document.getElementById('secretCode').textContent); live('Kod kopyalandı.'); }catch{ live('Kopyalama başarısız.'); }
+        });
+      }
+
+      els.btnReset.addEventListener('click', ()=>{
+        if(confirm('Tüm ilerlemeyi sıfırlamak istiyor musun?')){
+          state.total = 0; state.achievements = new Set(); state.shownCodes = new Set(); saveState();
+          updateScoreUI(); updateRank(); renderAchievements(); live('Veriler sıfırlandı.');
+        }
+      });
+
+      els.optSound.addEventListener('change', ()=>{ state.settings.sound = els.optSound.checked; saveState(); });
+      els.optConfetti.addEventListener('change', ()=>{ state.settings.confetti = els.optConfetti.checked; saveState(); });
+
+      // Modal arka plan tık kapatma (var olanlar)
+      [els.modalCode, els.modalSettings, document.getElementById('modalRank')].filter(Boolean).forEach(m=>{
+        m.addEventListener('click', (e)=>{ if(e.target === m) closeModal(m.id); });
+      });
+
+      // Resize konfeti canvas sabitleme
+      const ro = new ResizeObserver(()=>{ const c=els.confetti; c.width=c.clientWidth; c.height=c.clientHeight; });
+      ro.observe(document.body);
+
+      // Testleri çalıştır
+      runTests();
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+
+    // Kopyalama butonu (rank modal) — event delegation
+    document.addEventListener('click', async(e)=>{
+      if(e.target && e.target.id === 'btnCopyRank'){
+        try{ await navigator.clipboard.writeText(document.getElementById('rankSecretCode').textContent); live('Şifre kopyalandı.'); }catch{ live('Kopyalama başarısız.'); }
+      }
+    });
+  </script>
+</body>
+</html>
