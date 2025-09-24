@@ -100,6 +100,7 @@
     }
     .click-btn:hover{transform: translateY(-2px)}
     .click-btn:active{transform: translateY(1px) scale(.98)}
+    .click-btn[disabled]{filter:grayscale(.3) brightness(.7); cursor:not-allowed}
 
     .flying{position:fixed; pointer-events:none; font-weight:700; color:#9be7ff; text-shadow:0 4px 10px rgba(0,0,0,.5)}
 
@@ -144,10 +145,10 @@
     .modal-backdrop{position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; padding:20px; z-index:50}
     .modal-backdrop.show{display:flex}
     .modal{
-      width:min(560px, 100%); background:linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
-      border:1px solid rgba(255,255,255,.14); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px;
+      width:min(620px, 100%); background:linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.08));
+      border:1px solid rgba(255,255,255,.18); border-radius:var(--radius); box-shadow:var(--shadow); padding:22px;
     }
-    .modal h3{margin:0 0 10px 0}
+    .modal h3{margin:0 0 10px 0; font-size:1.25rem}
     .modal p{margin:0 0 12px 0; color:#e9ecff}
     .modal .actions{display:flex; gap:10px; justify-content:flex-end}
     .btn{
@@ -158,8 +159,8 @@
     .btn:active{transform:translateY(1px) scale(.98)}
     .btn.primary{background:linear-gradient(180deg,var(--primary),#5a4acc)}
     .btn.warn{background:linear-gradient(180deg,#c94040,#a22d2d)}
-    .codebox{display:flex; align-items:center; justify-content:space-between; gap:8px; background:rgba(0,0,0,.25); border:1px dashed rgba(255,255,255,.25); border-radius:12px; padding:10px 12px; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
-    .codebox code{font-weight:700; letter-spacing:.5px}
+    .codebox{display:flex; align-items:center; justify-content:space-between; gap:8px; background:rgba(0,0,0,.25); border:1px dashed rgba(255,255,255,.35); border-radius:16px; padding:14px 16px; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+    .codebox code{font-weight:800; letter-spacing:.8px; font-size:1.8rem; color:#fff; text-shadow:0 0 6px rgba(255,222,89,.9), 0 0 18px rgba(108,93,211,.7)}
 
     /* Accessibility helpers */
     .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0}
@@ -228,7 +229,7 @@
         <button class="btn" id="btnCopy">📋 Kopyala</button>
       </div>
       <div class="actions">
-        <button class="btn primary" data-close="modalCode">Kapat</button>
+        <button class="btn primary" id="btnCloseCode" data-close="modalCode" disabled>3 sn...</button>
       </div>
     </div>
   </div>
@@ -242,9 +243,10 @@
         <code id="rankSecretCode">—</code>
         <button class="btn" id="btnCopyRank">📋 Kopyala</button>
       </div>
-      <div style="margin-top:10px; color:#cdd3ff; font-size:.92rem">Bu şifre yalnızca bu unvana ilk ulaştığında gösterilir ve yerel cihazında saklanır.</div>
-      <div class="actions">
-        <button class="btn primary" data-close="modalRank">Kapat</button>
+      <div style="margin-top:10px; color:#cdd3ff; font-size:1rem">Şifre, öğrencinin rahatça okuyabilmesi için büyük ve parlak gösterilir.</div>
+      <div class="actions" id="rankActions">
+        <!-- Efsanede oyun bittiğinde kapatma butonu gizli kalacak -->
+        <button class="btn primary" id="btnCloseRank" data-close="modalRank">Kapat</button>
       </div>
     </div>
   </div>
@@ -317,7 +319,9 @@
       achievements:new Set(),
       settings:{ sound:false, confetti:true },
       shownCodes:new Set(),
-      motionOK: !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      motionOK: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+      paused:false,
+      gameOver:false
     };
 
     function loadState(){
@@ -360,7 +364,11 @@
       optSound: document.getElementById('optSound'),
       optConfetti: document.getElementById('optConfetti'),
       clickSound: document.getElementById('clickSound'),
-      confetti: document.getElementById('confetti')
+      confetti: document.getElementById('confetti'),
+      btnCloseCode: document.getElementById('btnCloseCode'),
+      modalRank: document.getElementById('modalRank'),
+      btnCloseRank: document.getElementById('btnCloseRank'),
+      rankActions: document.getElementById('rankActions')
     };
 
     // ========================
@@ -377,9 +385,14 @@
     function vibrate(ms=20){ if(navigator.vibrate) try{ navigator.vibrate(ms); }catch{} }
     function live(msg){ setText(els.live, msg); }
 
+    function setPaused(p){
+      state.paused = p;
+      els.btnClick.toggleAttribute('disabled', p || state.gameOver);
+    }
+
     // Uçan +1
     function flyingText(x,y,text='+1'){
-      if(!state.motionOK) return;
+      if(!state.motionOK || state.paused || state.gameOver) return;
       const el = document.createElement('div');
       el.className = 'flying';
       el.textContent = text;
@@ -453,7 +466,6 @@
         state.achievements.add(key);
         saveState();
         renderAchievements();
-        // Küçük kutlama
         if(state.settings.confetti) confetti.spawn(80);
         vibrate(15);
         live(`Başarı açıldı: ${def.label}`);
@@ -467,7 +479,6 @@
       const r = currentRank(state.total);
       setText(els.rankName, r.name);
       setText(els.rankBadge, r.badge);
-      // İlerleme
       const next = nextRankTarget(state.total);
       if(next === null){
         setText(els.progressText, 'En yüksek unvandasın!');
@@ -491,26 +502,20 @@
     }
 
     function onClick(e){
+      if(state.paused || state.gameOver) return;
       state.total += 1;
-      // Ses
       if(state.settings.sound){ try{ els.clickSound.currentTime = 0; els.clickSound.play(); }catch{} }
-      // Uçan +1
       const x = (e.clientX || (innerWidth/2)), y = (e.clientY || (innerHeight/2));
       flyingText(x,y,'+1');
-      // Vibration micro
       vibrate(12);
-      // 10 puanda şifre modal
-      if(state.total === 10) showModal('modalCode');
-      // Başarılar
+      if(state.total === 10) showTimedCodeModal();
       for(const a of ACH_DEFS){ if(state.total === a.at) unlockAchievement(a.key); }
-      // Unvan değişti mi? Basit kontrol
       const prevRank = currentRank(state.total-1);
       const newRank = currentRank(state.total);
       if(prevRank.name !== newRank.name){
         if(state.settings.confetti) confetti.spawn(150);
         vibrate(25);
         live(`Yeni Unvan: ${newRank.name}`);
-        // Efsane/Şampiyon şifre modalı
         showRankModal(newRank.name);
       }
       updateScoreUI();
@@ -519,25 +524,46 @@
     }
 
     // ========================
-    // Modals
+    // Modals & Pause/GameOver
     // ========================
     function showModal(id){
       const el = document.getElementById(id);
       if(!el) return;
       el.classList.add('show');
       el.setAttribute('aria-hidden','false');
+      setPaused(true); // modal açılınca oyun dursun
     }
     function closeModal(id){
       const el = document.getElementById(id);
       if(!el) return;
       el.classList.remove('show');
       el.setAttribute('aria-hidden','true');
+      if(!state.gameOver) setPaused(false); // oyun bitmediyse devam et
     }
+
+    function showTimedCodeModal(){
+      showModal('modalCode');
+      let t=3;
+      const btn = els.btnCloseCode;
+      btn.disabled = true;
+      btn.textContent = `${t} sn...`;
+      const iv = setInterval(()=>{
+        t--; btn.textContent = t>0 ? `${t} sn...` : 'Kapat';
+        if(t<=0){ clearInterval(iv); btn.disabled=false; }
+      },1000);
+    }
+
     function showRankModal(rankName){
       const code = RANK_CODES[rankName];
       if(!code) return;
-      if(state.shownCodes.has(rankName)) return; // Sadece ilk kez
-      // Kod içeriğini yerleştir
+      if(state.shownCodes.has(rankName)){
+        // Önceden gösterilmişse sadece modalı normal aç
+        document.getElementById('rankSecretCode').textContent = code;
+        document.getElementById('rankCodeDesc').textContent = `${rankName} oldun! Şifren:`;
+        showModal('modalRank');
+        return;
+      }
+      // İlk kez gösterim
       document.getElementById('rankSecretCode').textContent = code;
       const desc = document.getElementById('rankCodeDesc');
       desc.textContent = `${rankName} oldun! Bu özel şifreyi sakla.`;
@@ -547,6 +573,15 @@
       if(state.settings.confetti) confetti.spawn(180);
       vibrate(30);
       live(`Seviye şifresi gösterildi: ${rankName}`);
+
+      // 🔒 Efsane unvanında oyun bitsin ve popup kalsın
+      if(rankName === 'Click Efsanesi'){
+        state.gameOver = true;
+        // Kapatmayı devre dışı bırak
+        if(els.btnCloseRank) els.btnCloseRank.style.display='none';
+        // Arka plana tıklayarak kapanmayı engelle
+        els.modalRank.addEventListener('click', (e)=>{ /* hiçbir şey yapma */ }, { once:true });
+      }
     }
 
     // ========================
@@ -555,6 +590,7 @@
     function applySettingsToUI(){
       els.optSound.checked = !!state.settings.sound;
       els.optConfetti.checked = !!state.settings.confetti;
+      els.btnClick.toggleAttribute('disabled', state.paused || state.gameOver);
     }
 
     // ========================
@@ -584,9 +620,11 @@
       assert(nextRankTarget(55)===200,'next from 55');
       assert(nextRankTarget(201)===500,'next from 201');
       assert(nextRankTarget(800)===null,'next from champion');
-      // Kodlar
-      assert(!!RANK_CODES['Click Efsanesi'],'code exists efsane');
-      assert(!!RANK_CODES['Click Şampiyonu'],'code exists şampiyon');
+
+      // Pause/GameOver davranışı
+      const before = state.total; setPaused(true); onClick({}); assert(state.total===before,'paused iken artmamalı'); setPaused(false);
+      state.gameOver=true; const before2 = state.total; onClick({}); assert(state.total===before2,'gameOver iken artmamalı'); state.gameOver=false;
+
       console.log('%c✔ Tüm testler geçti','color:#8c82ff');
       console.groupEnd();
     }
@@ -609,7 +647,6 @@
 
       // Events
       els.btnClick.addEventListener('click', onClick);
-      // Klavye erişimi (Space/Enter)
       els.btnClick.addEventListener('keydown', (ev)=>{
         if(ev.key===' '|| ev.key==='Enter'){ ev.preventDefault(); onClick(ev); }
       });
@@ -625,20 +662,13 @@
         });
       }
 
-      els.btnReset.addEventListener('click', ()=>{
-        if(confirm('Tüm ilerlemeyi sıfırlamak istiyor musun?')){
-          state.total = 0; state.achievements = new Set(); state.shownCodes = new Set(); saveState();
-          updateScoreUI(); updateRank(); renderAchievements(); live('Veriler sıfırlandı.');
-        }
-      });
-
-      els.optSound.addEventListener('change', ()=>{ state.settings.sound = els.optSound.checked; saveState(); });
-      els.optConfetti.addEventListener('change', ()=>{ state.settings.confetti = els.optConfetti.checked; saveState(); });
-
-      // Modal arka plan tık kapatma (var olanlar)
-      [els.modalCode, els.modalSettings, document.getElementById('modalRank')].filter(Boolean).forEach(m=>{
+      // Modal arka plan tık kapatma — sadece ayarlar ve 10 puan modalı için
+      [els.modalCode, els.modalSettings].filter(Boolean).forEach(m=>{
         m.addEventListener('click', (e)=>{ if(e.target === m) closeModal(m.id); });
       });
+
+      // 10 puan modalında gecikmeli kapatma sayacı initte sıfır olsun
+      if(els.btnCloseCode) els.btnCloseCode.disabled = true;
 
       // Resize konfeti canvas sabitleme
       const ro = new ResizeObserver(()=>{ const c=els.confetti; c.width=c.clientWidth; c.height=c.clientHeight; });
