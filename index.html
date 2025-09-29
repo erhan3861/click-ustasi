@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Click Ustalığı</title>
+  <title>Click Ustası</title>
   <style>
     /* ========================
-       Tema & Reset
-       ======================== */
+        Tema & Reset
+        ======================== */
     :root{
       --primary:#6c5dd3; /* Mor */
       --accent:#ffde59;  /* Sarı */
@@ -28,7 +28,7 @@
     body{
       margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,'Noto Sans',sans-serif;
       color:var(--text); background: radial-gradient(1200px 800px at 10% 10%, #251f5a 0%, #141433 35%, #0c0d1f 70%),
-                         radial-gradient(1200px 800px at 90% 90%, #2a225f 0%, #161738 40%, #0f1020 75%);
+                               radial-gradient(1200px 800px at 90% 90%, #2a225f 0%, #161738 40%, #0f1020 75%);
       background-attachment: fixed;
     }
     @media (prefers-reduced-motion: no-preference){
@@ -37,8 +37,8 @@
     }
 
     /* ========================
-       Layout
-       ======================== */
+        Layout
+        ======================== */
     .container{
       min-height:100%; display:grid; grid-template-rows:auto 1fr auto; gap:20px; padding:20px; max-width:1200px; margin:0 auto;
     }
@@ -68,6 +68,12 @@
     .btn-icon:hover{transform:translateY(-1px)}
     .btn-icon:active{transform:translateY(1px) scale(.98)}
 
+    #iconExpand {
+    position: relative;   /* konumunu referans alabilmek için */
+    top: -10px;            /* yukarı taşıma (negatif değer yukarı iter) */
+    left: -16px;           /* sola taşıma (negatif değer sola iter) */
+    }
+
     main{display:grid; grid-template-columns: 1.2fr .8fr; gap:20px}
     @media (max-width: 900px){
       main{grid-template-columns:1fr}
@@ -83,8 +89,8 @@
     }
 
     /* ========================
-       Big Click Button & Center Stage
-       ======================== */
+        Big Click Button & Center Stage
+        ======================== */
     .stage{display:grid; place-items:center; gap:16px; text-align:center}
     .score{
       font-size:48px; font-weight:800; letter-spacing:.5px; margin:0 0 8px 0;
@@ -106,8 +112,8 @@
     .flying{position:fixed; pointer-events:none; font-weight:700; color:#9be7ff; text-shadow:0 4px 10px rgba(0,0,0,.5)}
 
     /* ========================
-       Right / Bottom Panel
-       ======================== */
+        Right / Bottom Panel
+        ======================== */
     .panel{display:grid; gap:16px}
 
     .progress{
@@ -135,14 +141,14 @@
     .ach small{display:block; color:var(--muted); margin-top:4px}
 
     /* ========================
-       Footer
-       ======================== */
+        Footer
+        ======================== */
     footer{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
     .microcopy{color:var(--muted)}
 
     /* ========================
-       Modals
-       ======================== */
+        Modals
+        ======================== */
     .modal-backdrop{position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; padding:20px; z-index:50}
     .modal-backdrop.show{display:flex}
     .modal{
@@ -168,14 +174,7 @@
     .btn-close:hover{transform:translateY(-1px)}
     .btn-close:active{transform:translateY(1px) scale(.98)}
     .btn-close.red{background:linear-gradient(180deg, #ff6b6b, #e74c3c); border-color:rgba(0,0,0,.2); box-shadow:0 8px 20px rgba(231,76,60,.35)}
-
-    /* Sadece Seviye Şifresi popup'ındaki kırmızı X için */
-   #modalRank .btn-close.red {
-  top: 10px;
-  right: 10px;   /* sağ üst */
-  l
-
-    /* Accessibility helpers */
+    #modalRank .btn-close.red {top: 10px; right: 10px; left: auto;}
     .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0}
   </style>
 </head>
@@ -192,6 +191,10 @@
       <div class="hud" role="group" aria-label="Durum">
         <div class="pill" aria-live="polite" aria-atomic="true"><span>🎯</span><span><strong>Puan:</strong> <span id="scoreTop">0</span></span></div>
         <div class="pill" aria-live="polite" aria-atomic="true"><span id="rankBadge">🎓</span><span><strong>Unvan:</strong> <span id="rankName">Click Öğrencisi</span></span></div>
+        <button id="btnFullscreen" class="btn-icon" aria-label="Tam Ekran" title="Tam Ekran Modu">
+            <img id="iconExpand" src="https://raw.githubusercontent.com/erhan3861/Maze-oyunu/main/maximize.png" alt="Tam Ekran Yap" style="width:60px; height:60px;">
+            <img id="iconCompress" src="https://raw.githubusercontent.com/erhan3861/Maze-oyunu/main/minimize.png" alt="Tam Ekrandan Çık" style="width:20px; height:20px; display:none;">
+        </button>
         <button id="btnSettings" class="btn-icon" aria-label="Ayarlar" title="Ayarlar">⚙️</button>
       </div>
     </header>
@@ -220,7 +223,6 @@
         <section class="card" aria-labelledby="achTitle">
           <h3 id="achTitle">Başarı Rozetleri</h3>
           <div class="ach-grid" id="achGrid">
-            <!-- JS ile doldurulacak -->
           </div>
         </section>
       </aside>
@@ -232,7 +234,6 @@
     </footer>
   </div>
 
-  <!-- Sürpriz Kod Modal (10 puan) -->
   <div class="modal-backdrop" id="modalCode" role="dialog" aria-modal="true" aria-labelledby="codeTitle" aria-hidden="true">
     <div class="modal">
       <button class="btn-close red" aria-label="Kapat" data-close="modalCode">✕</button>
@@ -247,8 +248,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Seviye Şifresi Modal (Efsane/Şampiyon) -->
   <div class="modal-backdrop" id="modalRank" role="dialog" aria-modal="true" aria-labelledby="rankCodeTitle" aria-hidden="true">
     <div class="modal">
       <button class="btn-close red" aria-label="Kapat" data-close="modalRank">✕</button>
@@ -264,8 +263,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Ayarlar Modal -->
   <div class="modal-backdrop" id="modalSettings" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" aria-hidden="true">
     <div class="modal">
       <h3 id="settingsTitle">Ayarlar</h3>
@@ -286,40 +283,29 @@
       </div>
     </div>
   </div>
-
   <div class="sr-only" aria-live="polite" id="live"></div>
 
   <script>
     // ========================
     // Veri Modeli & Durum
     // ========================
-    const LS_KEYS = {
-      total:'click_total',
-      ach:'unlocked_achievements',
-      settings:'settings',
-      shown:'shown_codes'
-    };
-
+    const LS_KEYS = { total:'click_total', ach:'unlocked_achievements', settings:'settings', shown:'shown_codes' };
     const RANKS = [
       { name:'Click Öğrencisi', min:0,   max:49,  badge:'🎓' },
       { name:'Click Ustası',   min:50,  max:199, badge:'🛠️' },
       { name:'Click Efsanesi', min:200, max:499, badge:'🏆' },
       { name:'Click Şampiyonu',min:500, max:Infinity, badge:'👑' }
     ];
-
     const ACH_DEFS = [
-      { key:'a10',  at:10,  label:'Isınma Bitti',     emoji:'🔥' },
-      { key:'a50',  at:50,  label:'Ritmi Yakaladın',  emoji:'🎶' },
-      { key:'a100', at:100, label:'Yüzlük Oldu!',     emoji:'💯' },
+      { key:'a10',  at:10,  label:'Isınma Bitti',      emoji:'🔥' },
+      { key:'a50',  at:50,  label:'Ritmi Yakaladın',   emoji:'🎶' },
+      { key:'a100', at:100, label:'Yüzlük Oldu!',      emoji:'💯' },
       { key:'a200', at:200, label:'Efsane Başlangıcı',emoji:'🌟' }
     ];
-
-    // Rank bazlı sabit şifreler
     const RANK_CODES = {
       'Click Efsanesi': 'T14-CEFS-2025-TR-9X7A-2QPM-VALOR-7H',
       'Click Şampiyonu': 'T14-CSMP-2025-TR-5L9R-8KQD-LEGEND-9Z'
     };
-
     const MICROCOPY = [
       'Ritmi yakala, tıklar seni yükseltsin!',
       'Kısa molalar ver, hızını koru.',
@@ -327,7 +313,6 @@
       'Hedef belirle: 50 → Ustalık!',
       'Küçük adımlar büyük sonuçlar getirir.'
     ];
-
     const state = {
       total:0,
       achievements:new Set(),
@@ -382,18 +367,22 @@
       btnCloseCode: document.getElementById('btnCloseCode'),
       modalRank: document.getElementById('modalRank'),
       btnCloseRank: document.getElementById('btnCloseRank'),
-      rankActions: document.getElementById('rankActions')
+      rankActions: document.getElementById('rankActions'),
+      // YENİ UI REFERANSLARI
+      btnFullscreen: document.getElementById('btnFullscreen'),
+      iconExpand: document.getElementById('iconExpand'),
+      iconCompress: document.getElementById('iconCompress')
     };
 
     // ========================
-    // Yardımcılar
+    // Yardımcılar & Fonksiyonlar
     // ========================
     function currentRank(total){
       return RANKS.find(r => total >= r.min && total <= r.max);
     }
     function nextRankTarget(total){
       const next = RANKS.find(r => total < r.min);
-      return next ? next.min : null; // Şampiyon sonrası yok
+      return next ? next.min : null;
     }
     function setText(node, text){ node.textContent = String(text); }
     function vibrate(ms=20){ if(navigator.vibrate) try{ navigator.vibrate(ms); }catch{} }
@@ -421,7 +410,7 @@
         return false;
       }
     }
-
+    
     // Uçan +1
     function flyingText(x,y,text='+1'){
       if(!state.motionOK || state.paused || state.gameOver) return;
@@ -439,7 +428,7 @@
       });
       setTimeout(()=> el.remove(), 800);
     }
-
+    
     // Basit konfeti (canvas)
     const confetti = {
       ctx:null, parts:[],
@@ -476,9 +465,32 @@
         requestAnimationFrame(()=>this.loop());
       }
     };
+    
+    // YENİ FONKSİYONLAR: Tam Ekran
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                alert(`Tam ekran modu etkinleştirilemedi: ${err.message}`);
+            });
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    }
 
+    function updateFullscreenIcon() {
+        if (document.fullscreenElement) {
+            els.iconExpand.style.display = 'none';
+            els.iconCompress.style.display = 'block';
+        } else {
+            els.iconExpand.style.display = 'block';
+            els.iconCompress.style.display = 'none';
+        }
+    }
+    
     // ========================
-    // Başarılar UI
+    // UI Güncellemeleri
     // ========================
     function renderAchievements(){
       els.achGrid.innerHTML = '';
@@ -490,7 +502,6 @@
         els.achGrid.appendChild(div);
       }
     }
-
     function unlockAchievement(key){
       const def = ACH_DEFS.find(a=>a.key===key);
       if(!def) return;
@@ -503,10 +514,6 @@
         live(`Başarı açıldı: ${def.label}`);
       }
     }
-
-    // ========================
-    // Unvan & İlerleme
-    // ========================
     function updateRank(){
       const r = currentRank(state.total);
       setText(els.rankName, r.name);
@@ -524,15 +531,14 @@
         setText(els.progressText, `Sonraki Unvana Kalan: ${Math.max(0, next - state.total)}`);
       }
     }
-
-    // ========================
-    // Puan & Click
-    // ========================
     function updateScoreUI(){
       setText(els.score, state.total);
       setText(els.scoreTop, state.total);
     }
 
+    // ========================
+    // Oyun Akışı & Click Olayı
+    // ========================
     function onClick(e){
       if(state.paused || state.gameOver) return;
       state.total += 1;
@@ -556,23 +562,22 @@
     }
 
     // ========================
-    // Modals & Pause/GameOver
+    // Modals
     // ========================
     function showModal(id){
       const el = document.getElementById(id);
       if(!el) return;
       el.classList.add('show');
       el.setAttribute('aria-hidden','false');
-      setPaused(true); // modal açılınca oyun dursun
+      setPaused(true);
     }
     function closeModal(id){
       const el = document.getElementById(id);
       if(!el) return;
       el.classList.remove('show');
       el.setAttribute('aria-hidden','true');
-      if(!state.gameOver) setPaused(false); // oyun bitmediyse devam et
+      if(!state.gameOver) setPaused(false);
     }
-
     function showTimedCodeModal(){
       showModal('modalCode');
       let t=3;
@@ -584,7 +589,6 @@
         if(t<=0){ clearInterval(iv); btn.disabled=false; }
       },1000);
     }
-
     function showRankModal(rankName){
       const code = RANK_CODES[rankName];
       if(!code) return;
@@ -599,61 +603,22 @@
       if(state.settings.confetti) confetti.spawn(180);
       vibrate(30);
       live(`Seviye şifresi gösterildi: ${rankName}`);
-
-      // Efsane unvanında oyun bitsin; popup istenirse X ile kapatılabilsin.
       if(rankName === 'Click Efsanesi'){
-        state.gameOver = true; // oyun biter
-        // Buton yine dursun; kullanıcı kapatmayı tercih edebilir. Oyun kapansa da devam etmez.
+        state.gameOver = true;
       }
     }
-
-    // ========================
-    // Ayarlar
-    // ========================
     function applySettingsToUI(){
       els.optSound.checked = !!state.settings.sound;
       els.optConfetti.checked = !!state.settings.confetti;
       els.btnClick.toggleAttribute('disabled', state.paused || state.gameOver);
     }
-
-    // ========================
-    // İpuçları
-    // ========================
     function rotateTip(){
       const tip = MICROCOPY[Math.floor(Math.random()*MICROCOPY.length)];
       els.tips.textContent = tip;
     }
-
+    
     // ========================
-    // Basit Testler (console)
-    // ========================
-    function assert(cond, msg){ if(!cond) throw new Error('Test failed: '+msg); }
-    function runTests(){
-      console.group('%cClick Ustalığı — Testler','color:#ffde59');
-      // Rank sınır testleri
-      assert(currentRank(0).name==='Click Öğrencisi','rank 0');
-      assert(currentRank(49).name==='Click Öğrencisi','rank 49');
-      assert(currentRank(50).name==='Click Ustası','rank 50');
-      assert(currentRank(199).name==='Click Ustası','rank 199');
-      assert(currentRank(200).name==='Click Efsanesi','rank 200');
-      assert(currentRank(499).name==='Click Efsanesi','rank 499');
-      assert(currentRank(500).name==='Click Şampiyonu','rank 500');
-      // nextRankTarget
-      assert(nextRankTarget(0)===50,'next from 0');
-      assert(nextRankTarget(55)===200,'next from 55');
-      assert(nextRankTarget(201)===500,'next from 201');
-      assert(nextRankTarget(800)===null,'next from champion');
-
-      // Pause/GameOver davranışı
-      const before = state.total; setPaused(true); onClick({}); assert(state.total===before,'paused iken artmamalı'); setPaused(false);
-      state.gameOver=true; const before2 = state.total; onClick({}); assert(state.total===before2,'gameOver iken artmamalı'); state.gameOver=false;
-
-      console.log('%c✔ Tüm testler geçti','color:#8c82ff');
-      console.groupEnd();
-    }
-
-    // ========================
-    // Init
+    // Init (Başlatma)
     // ========================
     function init(){
       loadState();
@@ -664,7 +629,6 @@
       rotateTip();
       setInterval(rotateTip, 6000);
 
-      // Konfeti döngüsü
       confetti.ctx = els.confetti.getContext('2d');
       confetti.loop();
 
@@ -673,12 +637,10 @@
       els.btnClick.addEventListener('keydown', (ev)=>{
         if(ev.key===' '|| ev.key==='Enter'){ ev.preventDefault(); onClick(ev); }
       });
-
       els.btnSettings.addEventListener('click', ()=> showModal('modalSettings'));
       document.querySelectorAll('[data-close]').forEach(btn=>{
         btn.addEventListener('click', ()=> closeModal(btn.getAttribute('data-close')));
       });
-
       if(els.btnCopy){
         els.btnCopy.addEventListener('click', async()=>{
           await copyToClipboard(document.getElementById('secretCode').textContent);
@@ -689,21 +651,17 @@
           await copyToClipboard(document.getElementById('rankSecretCode').textContent);
         }
       });
-
-      // Modal arka plan tık kapatma — sadece ayarlar ve 10 puan modalı için
       [els.modalCode, els.modalSettings].filter(Boolean).forEach(m=>{
         m.addEventListener('click', (e)=>{ if(e.target === m) closeModal(m.id); });
       });
-
-      // 10 puan modalında gecikmeli kapatma sayacı initte sıfır olsun
       if(els.btnCloseCode) els.btnCloseCode.disabled = true;
-
-      // Resize konfeti canvas sabitleme
+      
       const ro = new ResizeObserver(()=>{ const c=els.confetti; c.width=c.clientWidth; c.height=c.clientHeight; });
       ro.observe(document.body);
 
-      // Testleri çalıştır
-      runTests();
+      // YENİ EVENT LISTENERS
+      els.btnFullscreen.addEventListener('click', toggleFullscreen);
+      document.addEventListener('fullscreenchange', updateFullscreenIcon);
     }
 
     document.addEventListener('DOMContentLoaded', init);
